@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  inventory-service:
+    build: 
+      context: ./Inventory-service
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/inventory
+    depends_on:
+      - db
+    volumes:
+      - ./Inventory-service:/app
+    networks:
+      - inventory-network
+
+  stock-in-service:
+    build:
+      context: ./Stock in-service
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/inventory
+    depends_on:
+      - db
+    volumes:
+      - ./Stock in-service:/app
+    networks:
+      - inventory-network
+
+  stock-out-service:
+    build:
+      context: ./Stock Out-service
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/inventory
+    depends_on:
+      - db
+    volumes:
+      - ./Stock Out-service:/app
+    networks:
+      - inventory-network
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=inventory
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - inventory-network
+
+volumes:
+  postgres_data:
+
+networks:
+  inventory-network:
+    driver: bridge 
