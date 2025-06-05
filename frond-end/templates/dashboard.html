@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h3>Welcome, {{ current_user.username }}!</h3>
+                <p class="text-muted">Role: {{ current_user.role }}</p>
+            </div>
+            <div class="card-body">
+                {% if current_user.role == 'Suster' %}
+                    <div class="Suster-dashboard">
+                        <h4>Suster Dashboard</h4>
+                        <div class="row mt-4">
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Stock Management</h5>
+                                        <p class="card-text">Manage inventory stock levels</p>
+                                        <a href="{{ url_for('list_products') }}" class="btn btn-primary">Manage Products</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Inventory Stock</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Product</th>
+                                                    <th>Category</th>
+                                                    <th>Quantity</th>
+                                                    <th>Unit Price</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% if products and products.data %}
+                                                    {% for product in products.data.products %}
+                                                        <tr>
+                                                            <td>{{ product.name }}</td>
+                                                            <td>{{ product.category.name }}</td>
+                                                            <td>{{ product.quantity }}</td>
+                                                            <td>Rp {{ "{:,.2f}".format(product.unitPrice) if product.unitPrice else "0" }}</td>
+                                                            <td>
+                                                                <button class="btn btn-primary btn-sm" onclick="openStockInModal('{{ product.id }}')">Add Stock</button>
+                                                            </td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <tr>
+                                                        <td colspan="5" class="text-center">No products found</td>
+                                                    </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-12 mt-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Recent Stock Ins</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Product</th>
+                                                    <th>Quantity</th>
+                                                    <th>Unit Price</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% if stock_ins and stock_ins.data %}
+                                                    {% for stock_in in stock_ins.data.stockIns %}
+                                                        <tr>
+                                                            <td>{{ stock_in.date }}</td>
+                                                            <td>{{ stock_in.product.name }}</td>
+                                                            <td>{{ stock_in.quantity }}</td>
+                                                            <td>Rp {{ "{:,.2f}".format(stock_in.unitPrice) if stock_in.unitPrice else "0" }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <tr>
+                                                        <td colspan="4" class="text-center">No recent stock ins</td>
+                                                    </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% elif current_user.role == 'doctor' %}
+                    <div class="doctor-dashboard">
+                        <h4>Doctor Dashboard</h4>
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Stock Requests</h5>
+                                        <button class="btn btn-primary float-end" onclick="openStockRequestModal()">New Request</button>
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Product</th>
+                                                    <th>Quantity</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% if stock_outs and stock_outs.data %}
+                                                    {% for stock_out in stock_outs.data.stockOuts %}
+                                                        <tr>
+                                                            <td>{{ stock_out.usageDate }}</td>
+                                                            <td>{{ stock_out.product.name }}</td>
+                                                            <td>{{ stock_out.quantityUsed }}</td>
+                                                            <td>
+                                                                <span class="badge bg-success">Completed</span>
+                                                            </td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <tr>
+                                                        <td colspan="4" class="text-center">No stock requests found</td>
+                                                    </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stock In Modal -->
+<div class="modal fade" id="stockInModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="stockInForm">
+                    <input type="hidden" id="productId" name="productId">
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="quantity" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="unitPrice" class="form-label">Unit Price</label>
+                        <input type="number" step="0.01" class="form-control" id="unitPrice">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitStockIn()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stock Request Modal -->
+<div class="modal fade" id="stockRequestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Request Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="stockRequestForm">
+                    <div class="mb-3">
+                        <label for="requestProduct" class="form-label">Product</label>
+                        <select class="form-select" id="requestProduct" required>
+                            <option value="">Select Product</option>
+                            {% if products and products.data %}
+                                {% for product in products.data.products %}
+                                    <option value="{{ product.id }}">{{ product.name }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="requestQuantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="requestQuantity" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="requestNote" class="form-label">Note</label>
+                        <textarea class="form-control" id="requestNote"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitStockRequest()">Submit Request</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openStockInModal(productId) {
+    document.getElementById('productId').value = productId;
+    new bootstrap.Modal(document.getElementById('stockInModal')).show();
+}
+
+function submitStockIn() {
+    const data = {
+        product_id: parseInt(document.getElementById('productId').value),
+        quantity: parseInt(document.getElementById('quantity').value),
+        date: new Date().toISOString().split('T')[0],
+        unit_price: parseFloat(document.getElementById('unitPrice').value)
+    };
+
+    fetch('/api/stock-in', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error: ' + data.error);
+        } else {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing your request.');
+    });
+}
+
+function openStockRequestModal() {
+    new bootstrap.Modal(document.getElementById('stockRequestModal')).show();
+}
+
+function submitStockRequest() {
+    const data = {
+        product_id: parseInt(document.getElementById('requestProduct').value),
+        quantity_used: parseInt(document.getElementById('requestQuantity').value),
+        usage_date: new Date().toISOString().split('T')[0],
+        issued_to_service: document.getElementById('requestNote').value
+    };
+
+    fetch('/api/stock-out', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error: ' + data.error);
+        } else {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing your request.');
+    });
+}
+</script>
+{% endblock %} 

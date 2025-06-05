@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <h1 class="display-4 mb-4">Welcome to Inventory Management System</h1>
+        <p class="lead">Efficiently manage your medical inventory with our comprehensive system.</p>
+        
+        {% if not current_user.is_authenticated %}
+            <div class="mt-5">
+                <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg mx-2">Login</a>
+                <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-lg mx-2">Register</a>
+            </div>
+        {% else %}
+            <div class="mt-5">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-success btn-lg">Go to Dashboard</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">For Suster</h5>
+                <p class="card-text">Manage inventory, track stock levels, and generate reports.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">For Doctors</h5>
+                <p class="card-text">Request supplies and track usage history.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Real-time Updates</h5>
+                <p class="card-text">Get instant updates on inventory levels and requests.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -2,15 +2,10 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Tex
 from sqlalchemy.orm import relationship
 from database import Base
 
-class Category(Base):
-    __tablename__ = 'category'
-    
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False)
-    description = Column(Text)
-    
-    # Relationships
-    products = relationship('Product', back_populates='category')
+def format_to_idr(amount):
+    if amount is None:
+        return "Rp 0"
+    return f"Rp {float(amount):,.2f}"
 
 class Supplier(Base):
     __tablename__ = 'supplier'
@@ -29,7 +24,6 @@ class Product(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
     description = Column(Text)
-    category_id = Column(Integer, ForeignKey('category.id'))
     supplier_id = Column(Integer, ForeignKey('supplier.id'))
     quantity = Column(Integer, default=0)
     unit_price = Column(Numeric(10, 2))
@@ -37,10 +31,13 @@ class Product(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     
     # Relationships
-    category = relationship('Category', back_populates='products')
     supplier = relationship('Supplier', back_populates='products')
     stock_ins = relationship('StockIn', back_populates='product')
     stock_outs = relationship('StockOut', back_populates='product')
+
+    @property
+    def price_idr(self):
+        return format_to_idr(self.unit_price)
 
 class StockIn(Base):
     __tablename__ = 'stock_in'
@@ -53,6 +50,10 @@ class StockIn(Base):
     
     # Relationships
     product = relationship('Product', back_populates='stock_ins')
+
+    @property
+    def price_idr(self):
+        return format_to_idr(self.unit_price)
 
 class StockOut(Base):
     __tablename__ = 'stock_out'
