@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Tambah Pengeluaran Stok</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('create_stock_out_form') }}">
+                        <div class="mb-3">
+                            <label for="product_id" class="form-label">Produk</label>
+                            <select name="product_id" id="product_id" class="form-select" required>
+                                <option value="">Pilih Produk</option>
+                                {% if products and products.data %}
+                                    {% for product in products.data.products %}
+                                        <option value="{{ product.id }}">
+                                            {{ product.name }} (Stok: {{ product.quantity }})
+                                        </option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="quantity_used" class="form-label">Jumlah Digunakan</label>
+                            <input type="number" name="quantity_used" id="quantity_used" 
+                                   class="form-control" min="1" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="usage_date" class="form-label">Tanggal Penggunaan</label>
+                            <input type="date" name="usage_date" id="usage_date" 
+                                   class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="issued_to_service" class="form-label">Layanan</label>
+                            <input type="text" name="issued_to_service" id="issued_to_service" 
+                                   class="form-control" required placeholder="Nama Layanan">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="related_id" class="form-label">ID Terkait (Opsional)</label>
+                            <input type="text" name="related_id" id="related_id" 
+                                   class="form-control" placeholder="ID Layanan Terkait">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Catatan (Opsional)</label>
+                            <textarea name="notes" id="notes" class="form-control" 
+                                      rows="3" placeholder="Tambahkan catatan jika diperlukan"></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Simpan</button>
+                            <a href="{{ url_for('list_stock_outs') }}" class="btn btn-secondary">Kembali</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    // Set default date to today
+    document.getElementById('usage_date').valueAsDate = new Date();
+
+    // Add validation for quantity
+    document.getElementById('quantity_used').addEventListener('change', function() {
+        if (this.value < 1) {
+            this.value = 1;
+        }
+    });
+</script>
+{% endblock %}
+
+{% endblock %} 

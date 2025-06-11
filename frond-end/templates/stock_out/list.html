@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Daftar Pengeluaran Stok</h2>
+    
+    <!-- Filter Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label for="product_id" class="form-label">Produk</label>
+                    <select name="product_id" id="product_id" class="form-select">
+                        <option value="">Semua Produk</option>
+                        {% if products and products.data %}
+                            {% for product in products.data.products %}
+                                <option value="{{ product.id }}" {% if request.args.get('product_id')|int == product.id %}selected{% endif %}>
+                                    {{ product.name }}
+                                </option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="issued_to_service" class="form-label">Layanan</label>
+                    <input type="text" name="issued_to_service" id="issued_to_service" class="form-control" 
+                           value="{{ request.args.get('issued_to_service', '') }}" placeholder="Nama Layanan">
+                </div>
+                <div class="col-md-2">
+                    <label for="start_date" class="form-label">Tanggal Mulai</label>
+                    <input type="date" name="start_date" id="start_date" class="form-control" 
+                           value="{{ request.args.get('start_date', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="end_date" class="form-label">Tanggal Selesai</label>
+                    <input type="date" name="end_date" id="end_date" class="form-control" 
+                           value="{{ request.args.get('end_date', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">Semua Status</option>
+                        <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Selesai</option>
+                        <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Menunggu</option>
+                        <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Dibatalkan</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="{{ url_for('list_stock_outs') }}" class="btn btn-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stock Out List -->
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title">Riwayat Pengeluaran Stok</h5>
+                <a href="{{ url_for('create_stock_out_form') }}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Tambah Pengeluaran Stok
+                </a>
+            </div>
+            
+            {% if stock_outs and stock_outs.data %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Produk</th>
+                                <th>Jumlah</th>
+                                <th>Tanggal</th>
+                                <th>Layanan</th>
+                                <th>Status</th>
+                                <th>Disetujui Oleh</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stock_out in stock_outs.data.stockOuts %}
+                                <tr>
+                                    <td>{{ stock_out.id }}</td>
+                                    <td>
+                                        {% if products and products.data %}
+                                            {% for product in products.data.products %}
+                                                {% if product.id == stock_out.productId %}
+                                                    {{ product.name }}
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ stock_out.quantityUsed }}</td>
+                                    <td>{{ stock_out.usageDate }}</td>
+                                    <td>{{ stock_out.issuedToService }}</td>
+                                    <td>
+                                        <span class="badge {% if stock_out.status == 'completed' %}bg-success
+                                                          {% elif stock_out.status == 'pending' %}bg-warning
+                                                          {% else %}bg-danger{% endif %}">
+                                            {{ stock_out.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ stock_out.approvedBy }}</td>
+                                    <td>
+                                        <a href="{{ url_for('view_stock_out', id=stock_out.id) }}" 
+                                           class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    Tidak ada data pengeluaran stok yang ditemukan.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

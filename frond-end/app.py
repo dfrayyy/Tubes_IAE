@@ -122,10 +122,85 @@ def create_stock_out():
         product_id=data['product_id'],
         quantity_used=data['quantity_used'],
         usage_date=data['usage_date'],
-        issued_to_service=data.get('issued_to_service'),
-        related_id=data.get('related_id')
+        issued_to_service=data['issued_to_service'],
+        approved_by=current_user.username,
+        related_id=data.get('related_id'),
+        notes=data.get('notes')
     )
     return jsonify(result)
+
+@app.route('/stock-out', methods=['GET'])
+@login_required
+def list_stock_outs():
+    if current_user.role != 'doctor':
+        flash('Unauthorized access')
+        return redirect(url_for('dashboard'))
+    
+    # Get filter parameters
+    product_id = request.args.get('product_id', type=int)
+    issued_to_service = request.args.get('issued_to_service')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    status = request.args.get('status')
+    
+    # Get filtered stock outs
+    stock_outs = StockOutService.get_stock_outs_by_filter(
+        product_id=product_id,
+        issued_to_service=issued_to_service,
+        start_date=start_date,
+        end_date=end_date,
+        status=status
+    )
+    
+    # Get products for dropdown
+    products = InventoryService.get_products()
+    
+    return render_template('stock_out/list.html',
+                         stock_outs=stock_outs,
+                         products=products)
+
+@app.route('/stock-out/create', methods=['GET', 'POST'])
+@login_required
+def create_stock_out_form():
+    if current_user.role != 'doctor':
+        flash('Unauthorized access')
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        result = StockOutService.create_stock_out(
+            product_id=int(request.form['product_id']),
+            quantity_used=int(request.form['quantity_used']),
+            usage_date=request.form['usage_date'],
+            issued_to_service=request.form['issued_to_service'],
+            approved_by=current_user.username,
+            related_id=request.form.get('related_id'),
+            notes=request.form.get('notes')
+        )
+        
+        if result and not result.get('errors'):
+            flash('Stock out recorded successfully')
+            return redirect(url_for('list_stock_outs'))
+        else:
+            flash('Error recording stock out')
+    
+    products = InventoryService.get_products()
+    return render_template('stock_out/create.html',
+                         products=products)
+
+@app.route('/stock-out/<int:id>', methods=['GET'])
+@login_required
+def view_stock_out(id):
+    if current_user.role != 'doctor':
+        flash('Unauthorized access')
+        return redirect(url_for('dashboard'))
+    
+    stock_out = StockOutService.get_stock_out_by_id(id)
+    if not stock_out or stock_out.get('errors'):
+        flash('Stock out record not found')
+        return redirect(url_for('list_stock_outs'))
+    
+    return render_template('stock_out/view.html',
+                         stock_out=stock_out['data']['stockOut'])
 
 @app.route('/logout')
 @login_required
