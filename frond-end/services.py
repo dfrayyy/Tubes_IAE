@@ -203,6 +203,64 @@ class InventoryService:
             print(f"Error fetching suppliers: {e}")
             return None
 
+    @staticmethod
+    def create_category(name, description=None):
+        try:
+            response = requests.post(
+                f"{Config.INVENTORY_SERVICE_URL}/graphql",
+                json={
+                    "query": """
+                    mutation ($name: String!, $description: String) {
+                        createCategory(name: $name, description: $description) {
+                            category {
+                                id
+                                name
+                                description
+                            }
+                        }
+                    }
+                    """,
+                    "variables": {
+                        "name": name,
+                        "description": description
+                    }
+                }
+            )
+            return response.json()
+        except requests.RequestException as e:
+            print(f"Error creating category: {e}")
+            return None
+
+    @staticmethod
+    def create_supplier(name, contact_info=None, address=None):
+        try:
+            response = requests.post(
+                f"{Config.INVENTORY_SERVICE_URL}/graphql",
+                json={
+                    "query": """
+                    mutation ($name: String!, $contactInfo: String, $address: String) {
+                        createSupplier(name: $name, contactInfo: $contactInfo, address: $address) {
+                            supplier {
+                                id
+                                name
+                                contactInfo
+                                address
+                            }
+                        }
+                    }
+                    """,
+                    "variables": {
+                        "name": name,
+                        "contactInfo": contact_info,
+                        "address": address
+                    }
+                }
+            )
+            return response.json()
+        except requests.RequestException as e:
+            print(f"Error creating supplier: {e}")
+            return None
+
 class StockInService:
     @staticmethod
     def get_stock_ins():
