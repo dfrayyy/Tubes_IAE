@@ -203,6 +203,64 @@ class InventoryService:
             print(f"Error fetching suppliers: {e}")
             return None
 
+    @staticmethod
+    def create_category(name, description=None):
+        try:
+            response = requests.post(
+                f"{Config.INVENTORY_SERVICE_URL}/graphql",
+                json={
+                    "query": """
+                    mutation ($name: String!, $description: String) {
+                        createCategory(name: $name, description: $description) {
+                            category {
+                                id
+                                name
+                                description
+                            }
+                        }
+                    }
+                    """,
+                    "variables": {
+                        "name": name,
+                        "description": description
+                    }
+                }
+            )
+            return response.json()
+        except requests.RequestException as e:
+            print(f"Error creating category: {e}")
+            return None
+
+    @staticmethod
+    def create_supplier(name, contact_info=None, address=None):
+        try:
+            response = requests.post(
+                f"{Config.INVENTORY_SERVICE_URL}/graphql",
+                json={
+                    "query": """
+                    mutation ($name: String!, $contactInfo: String, $address: String) {
+                        createSupplier(name: $name, contactInfo: $contactInfo, address: $address) {
+                            supplier {
+                                id
+                                name
+                                contactInfo
+                                address
+                            }
+                        }
+                    }
+                    """,
+                    "variables": {
+                        "name": name,
+                        "contactInfo": contact_info,
+                        "address": address
+                    }
+                }
+            )
+            return response.json()
+        except requests.RequestException as e:
+            print(f"Error creating supplier: {e}")
+            return None
+
 class StockInService:
     @staticmethod
     def get_stock_ins():
@@ -280,13 +338,16 @@ class StockOutService:
                     query {
                         stockOuts {
                             id
-                            product {
-                                name
-                            }
+                            productId
                             quantityUsed
                             usageDate
                             issuedToService
                             relatedId
+                            notes
+                            createdAt
+                            updatedAt
+                            status
+                            approvedBy
                         }
                     }
                     """
@@ -298,30 +359,35 @@ class StockOutService:
             return None
 
     @staticmethod
-    def create_stock_out(product_id, quantity_used, usage_date, issued_to_service=None, related_id=None):
+    def create_stock_out(product_id, quantity_used, usage_date, issued_to_service, approved_by, related_id=None, notes=None):
         try:
             response = requests.post(
                 f"{Config.STOCK_OUT_SERVICE_URL}/graphql",
                 json={
                     "query": """
-                    mutation ($productId: Int!, $quantityUsed: Int!, $usageDate: Date!, $issuedToService: String, $relatedId: String) {
+                    mutation ($productId: Int!, $quantityUsed: Int!, $usageDate: String!, $issuedToService: String!, $approvedBy: String!, $relatedId: String, $notes: String) {
                         createStockOut(
                             productId: $productId
                             quantityUsed: $quantityUsed
                             usageDate: $usageDate
                             issuedToService: $issuedToService
+                            approvedBy: $approvedBy
                             relatedId: $relatedId
+                            notes: $notes
                         ) {
                             stockOut {
                                 id
-                                product {
-                                    name
-                                }
+                                productId
                                 quantityUsed
                                 usageDate
                                 issuedToService
                                 relatedId
+                                notes
+                                createdAt
+                                status
+                                approvedBy
                             }
+                            message
                         }
                     }
                     """,
@@ -330,11 +396,93 @@ class StockOutService:
                         "quantityUsed": quantity_used,
                         "usageDate": usage_date,
                         "issuedToService": issued_to_service,
-                        "relatedId": related_id
+                        "approvedBy": approved_by,
+                        "relatedId": related_id,
+                        "notes": notes
                     }
                 }
             )
             return response.json()
         except requests.RequestException as e:
             print(f"Error creating stock out: {e}")
+            return None
+
+    @staticmethod
+    def get_stock_out_by_id(id):
+        try:
+            response = requests.post(
+                f"{Config.STOCK_OUT_SERVICE_URL}/graphql",
+                json={
+                    "query": """
+                    query ($id: Int!) {
+                        stockOut(id: $id) {
+                            id
+                            productId
+                            quantityUsed
+                            usageDate
+                            issuedToService
+                            relatedId
+                            notes
+                            createdAt
+                            updatedAt
+                            status
+                            approvedBy
+                        }
+                    }
+                    """,
+                    "variables": {
+                        "id": id
+                    }
+                }
+            )
+            return response.json()
+        except requests.RequestException as e:
+            print(f"Error fetching stock out: {e}")
+            return None
+
+    @staticmethod
+    def get_stock_outs_by_filter(product_id=None, issued_to_service=None, start_date=None, end_date=None, status=None):
+        try:
+            variables = {
+                "productId": product_id,
+                "issuedToService": issued_to_service,
+                "startDate": start_date,
+                "endDate": end_date,
+                "status": status
+            }
+            # Remove None values
+            variables = {k: v for k, v in variables.items() if v is not None}
+
+            response = requests.post(
+                f"{Config.STOCK_OUT_SERVICE_URL}/graphql",
+                json={
+                    "query": """
+                    query ($productId: Int, $issuedToService: String, $startDate: String, $endDate: String, $status: String) {
+                        stockOuts(
+                            productId: $productId
+                            issuedToService: $issuedToService
+                            startDate: $startDate
+                            endDate: $endDate
+                            status: $status
+                        ) {
+                            id
+                            productId
+                            quantityUsed
+                            usageDate
+                            issuedToService
+                            relatedId
+                            notes
+                            createdAt
+                            updatedAt
+                            status
+                            approvedBy
+                        }
+                    }
+                    """,
+                    "variables": variables
+                }
+            )
+            return response.json()
+        except requests.RequestException as e:
+            print(f"Error fetching filtered stock outs: {e}")
             return None 
