@@ -21,7 +21,7 @@ services:
       context: ./Stock in-service
       dockerfile: Dockerfile
     ports:
-      - "5001:5000"
+      - "5002:5002"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/inventory
     depends_on:
